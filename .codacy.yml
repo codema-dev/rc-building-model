@@ -1,0 +1,8 @@
+---
+exclude_paths:
+  - 'rc_building_model/_version.py'
+  - 'tests/**/*'
+  - 'tests/*'
+  - 'benchmarks/**/*'
+  - 'setup.py'
+  - 'versioneer.py'
