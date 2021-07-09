@@ -194,8 +194,6 @@ def calculate_useful_gains_per_year(
     return solar_gain_w + light_gains
 
 
-# Heating season defined as October-May as per DEAP
-
 
 def calculate_heat_use(
     monthly_heat_loss,
