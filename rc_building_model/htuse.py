@@ -204,4 +204,6 @@ def calculate_heat_use(
         monthly_heat_loss - monthly_useful_gains
     ) / 0.913  # Assume boiler efficiency of 91.3%
 
-    return (monthly_heat_use_w / 1000) * 24 * 243  # Calculating heat use in kWh
+    w_to_kw = (1 / 1000) 
+    NAME_ME = 24 * 243
+    return monthly_heat_use_w * w_to_kw  * NAME_ME
