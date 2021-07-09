@@ -185,7 +185,8 @@ def calculate_useful_gains_per_year(
     light_gain_value=8,  # Mean reference value taken from DEAP as 8W/m2 of gains
 ):
 
-    solar_gain_kwh = (window_area / 6) * (
+    NAME_ME = 6
+    solar_gain_kwh = (window_area / NAME_ME) * (
         mean_monthly_solar_gains * UTILISATION_FACTOR
     ).sum()  # Total Area divided by 6 to divide orientation
     solar_gain_w = solar_gain_kwh * 1000 / 24
