@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 import pandas as pd
 from pandas.testing import assert_series_equal
-import pytest
+import pytest, pytest_cov
 
 from rc_building_model import htuse
 
@@ -108,6 +108,64 @@ def test_heat_loss_per_year(delta_t_by_month, hours_per_month):
         heat_loss_coefficient=heat_loss_coefficient,
         delta_t=delta_t_by_month,
         hours=hours_per_month,
+    )
+
+    assert_series_equal(output, expected_output)
+
+
+def test_calculate_useful_gains_per_year():
+
+    expected_output = pd.Series([860.565903, 809.363333], dtype="float64")
+
+    floor_area = pd.Series(
+        [
+            40,
+            48,
+        ]
+    )
+    window_area = pd.Series(
+        [
+            6.1,
+            4.8,
+        ]
+    )
+    mean_monthly_solar_gains = pd.Series(
+        [0.63, 1.12, 1.7, 2.35, 2.96, 2.99, 2.79, 2.54, 1.99, 1.37, 0.8, 0.55],
+        index=[
+            "jan",
+            "feb",
+            "mar",
+            "apr",
+            "may",
+            "jun",
+            "jul",
+            "aug",
+            "sep",
+            "oct",
+            "nov",
+            "dec",
+        ],
+    )
+    output = htuse.calculate_useful_gains_per_year(
+        floor_area=floor_area,
+        window_area=window_area,
+        mean_monthly_solar_gains=mean_monthly_solar_gains,
+        light_gain_value=8,
+    )
+
+    assert_series_equal(output, expected_output)
+
+
+def test_calculate_useful_gains_per_year():
+
+    expected_output = pd.Series([11935.057673, 88282.533450], dtype="float64")
+
+    monthly_heat_loss = pd.Series([2729.0, 14630.0], dtype="float64")
+    monthly_useful_gains = pd.Series([860.565903, 809.363333], dtype="float64")
+
+    output = htuse.calculate_heat_use(
+        monthly_heat_loss=monthly_heat_loss,
+        monthly_useful_gains=monthly_useful_gains,
     )
 
     assert_series_equal(output, expected_output)

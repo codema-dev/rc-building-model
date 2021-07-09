@@ -73,6 +73,60 @@ HOURS_PER_MONTH = pd.Series(
     ],
 )
 
+DAYS_PER_MONTH = pd.Series(
+    [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+    index=[
+        "jan",
+        "feb",
+        "mar",
+        "apr",
+        "may",
+        "jun",
+        "jul",
+        "aug",
+        "sep",
+        "oct",
+        "nov",
+        "dec",
+    ],
+)
+
+MEAN_MONTHLY_SOLAR_GAINS = pd.Series(
+    [0.63, 1.12, 1.7, 2.35, 2.96, 2.99, 2.79, 2.54, 1.99, 1.37, 0.8, 0.55],
+    index=[
+        "jan",
+        "feb",
+        "mar",
+        "apr",
+        "may",
+        "jun",
+        "jul",
+        "aug",
+        "sep",
+        "oct",
+        "nov",
+        "dec",
+    ],
+)
+
+UTILISATION_FACTOR = pd.Series(
+    [0.99, 0.97, 0.91, 0.78, 0.55, 0.38, 0.25, 0.29, 0.51, 0.83, 0.97, 0.99],
+    index=[
+        "jan",
+        "feb",
+        "mar",
+        "apr",
+        "may",
+        "jun",
+        "jul",
+        "aug",
+        "sep",
+        "oct",
+        "nov",
+        "dec",
+    ],
+)
+
 
 def _calculate_heat_loss_kwh(heat_loss_coefficient, delta_t, hours):
     # NOTE: all arrays must be the same length!
@@ -122,3 +176,34 @@ def calculate_heat_loss_per_year(
     )
     heat_loss_kwh_for_heating_months.index = new_index
     return heat_loss_kwh_for_heating_months.sum(level=0).round()
+
+
+def calculate_useful_gains_per_year(
+    floor_area,
+    window_area,
+    mean_monthly_solar_gains=MEAN_MONTHLY_SOLAR_GAINS,
+    light_gain_value=8,  # Mean reference value taken from DEAP as 8W/m2 of gains
+):
+
+    solar_gain_kwh = (window_area / 6) * (
+        mean_monthly_solar_gains * UTILISATION_FACTOR
+    ).sum()  # Total Area divided by 6 to divide orientation
+    solar_gain_w = solar_gain_kwh * 1000 / 24
+    light_gains = floor_area * light_gain_value
+
+    return solar_gain_w + light_gains
+
+
+# Heating season defined as October-May as per DEAP
+
+
+def calculate_heat_use(
+    monthly_heat_loss,
+    monthly_useful_gains,
+):
+
+    monthly_heat_use_w = (
+        monthly_heat_loss - monthly_useful_gains
+    ) / 0.913  # Assume boiler efficiency of 91.3%
+
+    return (monthly_heat_use_w / 1000) * 24 * 243  # Calculating heat use in kWh
