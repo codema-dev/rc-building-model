@@ -3,7 +3,7 @@ import pandas as pd
 from pandas.testing import assert_series_equal
 import pytest
 
-from rc_building_model import fab
+from rcbm import fab
 
 
 def test_calculate_fabric_heat_loss():

@@ -1,7 +1,0 @@
-[report]
-omit =
-    setup.py
-    rc_building_model/__main__.py
-    rc_building_model/_version.py
-    versioneer.py
-    tests/*

@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "rcbm"
+version = "0.1.0"
+description = "A Resistance Capacitance (RC) Model for the Simulation of Building Stock Energy Usage"
+authors = ["Rowan Molony <rowan.molony@codema.ie>"]
+license = "MIT"
+repository = "https://github.com/codema-dev/rc-building-model"
+
+[tool.poetry.dependencies]
+python = "^3.6.2"
+pandas = "^1.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+black = "^21.6b0"
+flake8 = "^3.9.2"
+mypy = "^0.910"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

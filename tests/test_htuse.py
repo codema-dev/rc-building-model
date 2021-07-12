@@ -4,7 +4,7 @@ import pandas as pd
 from pandas.testing import assert_series_equal
 import pytest
 
-from rc_building_model import htuse
+from rcbm import htuse
 
 
 @pytest.fixture

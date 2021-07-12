@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
 
-from rc_building_model import vent
+from rcbm import vent
 
 
 def test_calculate_infiltration_rate_due_to_openings():
