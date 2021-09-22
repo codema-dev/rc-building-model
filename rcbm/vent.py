@@ -8,6 +8,8 @@ Structure Types
 - Concrete has an infiltration rate of 0
 """
 from decimal import DivisionByZero
+from typing import Dict
+from typing import Optional
 from typing import Union
 
 import numpy as np
@@ -39,6 +41,7 @@ STRUCTURE_TYPES = {
 YES_NO = {"YES": True, "NO": False}
 
 Series = Union[int, pd.Series, np.array]
+OptionalMap = Optional[Dict[str, str]]
 
 
 def _calculate_infiltration_rate_due_to_opening(
@@ -111,37 +114,69 @@ def calculate_infiltration_rate_due_to_openings(
     )
 
 
-def _calculate_infiltration_rate_due_to_structure(
-    is_permeability_tested,
+def calculate_infiltration_rate_due_to_height(no_storeys: Series) -> Series:
+    return (no_storeys - 1) * 0.1
+
+
+def calculate_infiltration_rate_due_to_structure_type(
+    structure_type: Series, structure_type_map: OptionalMap = None
+) -> Series:
+    if not structure_type_map:
+        structure_type_map = {
+            "Masonry                       ": "masonry",
+            "Please select                 ": np.nan,
+            "Timber or Steel Frame         ": "timber_or_steel",
+            "Insulated Conctete Form       ": "concrete",
+        }
+    return (
+        structure_type.map(structure_type_map)
+        .map({"masonry": 0.35, "timber_or_steel": 0.25, "concrete": 0})  # ASSUMPTION
+        .fillna(0.35)  # ASSUMPTION
+    )
+
+
+def calculate_infiltration_rate_due_to_suspended_floor(
+    is_floor_suspended: Series, floor_types_map: OptionalMap = None
+) -> Series:
+    if not floor_types_map:
+        floor_types_map = {
+            "No                            ": "no",
+            "Yes (Unsealed)                ": "unsealed",
+            "Yes (Sealed)                  ": "sealed",
+        }
+    return (
+        is_floor_suspended.map(floor_types_map)
+        .map({"no": 0, "sealed": 0.1, "unsealed": 0.2})
+        .fillna(0)
+    )
+
+
+def calculate_infiltration_rate_due_to_draught(
+    percentage_draught_stripped: Series,
+) -> Series:
+    return 0.25 - (0.2 * (percentage_draught_stripped / 100))
+
+
+def calculate_infiltration_rate_due_to_structure(
     permeability_test_result,
     no_storeys,
     percentage_draught_stripped,
     is_floor_suspended,
     structure_type,
-    suspended_floor_types=SUSPENDED_FLOOR_TYPES,
-    structure_types=STRUCTURE_TYPES,
-    permeability_test_boolean=YES_NO,
 ):
-    infiltration_rate_due_to_height = (no_storeys - 1) * 0.1
-    infiltration_rate_due_to_structure_type = (
-        structure_type.map(structure_types)
-        .map({"masonry": 0.35, "timber_or_steel": 0.25, "concrete": 0})  # ASSUMPTION:
-        .fillna(0.35)  # ASSUMPTION
+    theoretical_infiltration_rate = (
+        calculate_infiltration_rate_due_to_height(no_storeys)
+        + calculate_infiltration_rate_due_to_structure_type(structure_type)
+        + calculate_infiltration_rate_due_to_suspended_floor(is_floor_suspended)
+        + calculate_infiltration_rate_due_to_draught(percentage_draught_stripped)
     )
-    infiltration_rate_due_to_suspended_floor = (
-        is_floor_suspended.map(suspended_floor_types)
-        .map({"no": 0, "sealed": 0.1, "unsealed": 0.2})
-        .fillna(0)
-    )
-    infiltration_rate_due_to_draught = 0.25 - (
-        0.2 * (percentage_draught_stripped / 100)
-    )
-    return permeability_test_result.where(
-        is_permeability_tested.map(permeability_test_boolean),
-        infiltration_rate_due_to_height
-        + infiltration_rate_due_to_structure_type
-        + infiltration_rate_due_to_suspended_floor
-        + infiltration_rate_due_to_draught,
+    infiltration_rate_is_available = permeability_test_result > 0
+    return pd.Series(
+        np.where(
+            infiltration_rate_is_available,
+            permeability_test_result,
+            theoretical_infiltration_rate,
+        )
     )
 
 
@@ -153,15 +188,11 @@ def calculate_infiltration_rate(
     no_fans,
     no_room_heaters,
     is_draught_lobby,
-    is_permeability_tested,
     permeability_test_result,
     no_storeys,
     percentage_draught_stripped,
     is_floor_suspended,
     structure_type,
-    suspended_floor_types=SUSPENDED_FLOOR_TYPES,
-    structure_types=STRUCTURE_TYPES,
-    permeability_test_boolean=YES_NO,
 ):
     infiltration_rate_due_to_openings = calculate_infiltration_rate_due_to_openings(
         building_volume=building_volume,
@@ -172,16 +203,12 @@ def calculate_infiltration_rate(
         is_draught_lobby=is_draught_lobby,
     )
 
-    infiltration_rate_due_to_structure = _calculate_infiltration_rate_due_to_structure(
-        is_permeability_tested=is_permeability_tested,
+    infiltration_rate_due_to_structure = calculate_infiltration_rate_due_to_structure(
         permeability_test_result=permeability_test_result,
         no_storeys=no_storeys,
         percentage_draught_stripped=percentage_draught_stripped,
         is_floor_suspended=is_floor_suspended,
         structure_type=structure_type,
-        suspended_floor_types=suspended_floor_types,
-        structure_types=structure_types,
-        permeability_test_boolean=permeability_test_boolean,
     )
 
     infiltration_rate = (

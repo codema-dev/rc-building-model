@@ -29,7 +29,6 @@ def test_calculate_infiltration_rate_due_to_openings():
 
 def test_calculate_infiltration_rate_due_to_structure():
     """Output is equivalent to DEAP 4.2.0 example A"""
-    is_permeability_tested = pd.Series(["YES", "NO", "NO"])
     permeability_test_result = pd.Series([0.15, np.nan, np.nan])
     no_storeys = pd.Series([np.nan, 2, 1])
     percentage_draught_stripped = pd.Series([np.nan, 100, 75])
@@ -41,16 +40,12 @@ def test_calculate_infiltration_rate_due_to_structure():
     )
     expected_output = pd.Series([0.15, 0.5, 0.55])
 
-    output = vent._calculate_infiltration_rate_due_to_structure(
-        is_permeability_tested=is_permeability_tested,
+    output = vent.calculate_infiltration_rate_due_to_structure(
         permeability_test_result=permeability_test_result,
         no_storeys=no_storeys,
         percentage_draught_stripped=percentage_draught_stripped,
         is_floor_suspended=is_floor_suspended,
         structure_type=structure_type,
-        suspended_floor_types=vent.SUSPENDED_FLOOR_TYPES,
-        structure_types=vent.STRUCTURE_TYPES,
-        permeability_test_boolean=vent.YES_NO,
     )
 
     assert_series_equal(output.round(2), expected_output)
@@ -73,7 +68,7 @@ def test_calculate_infiltration_rate(monkeypatch):
     )
     monkeypatch.setattr(
         vent,
-        "_calculate_infiltration_rate_due_to_structure",
+        "calculate_infiltration_rate_due_to_structure",
         _mock_calculate_infiltration_rate_due_to_structure,
     )
     expected_output = pd.Series([0.2, 0.49])
@@ -86,15 +81,11 @@ def test_calculate_infiltration_rate(monkeypatch):
         no_fans=None,
         no_room_heaters=None,
         is_draught_lobby=None,
-        is_permeability_tested=None,
         permeability_test_result=None,
         no_storeys=None,
         percentage_draught_stripped=None,
         is_floor_suspended=None,
         structure_type=None,
-        suspended_floor_types=None,
-        structure_types=None,
-        permeability_test_boolean=None,
     )
 
     assert_series_equal(output.round(2), expected_output)
