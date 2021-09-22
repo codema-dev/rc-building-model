@@ -7,22 +7,21 @@ from rcbm import vent
 
 def test_calculate_infiltration_rate_due_to_openings():
     """Output is equivalent to DEAP 4.2.0 example A"""
-    building_volume = pd.Series([321, 0, 100, 200])
-    no_chimneys = pd.Series([0, 0, 0, 1])
-    no_open_flues = pd.Series([0, 0, 0, 1])
-    no_fans = pd.Series([1, 0, 0, 1])
-    no_room_heaters = pd.Series([0, 0, 0, 1])
-    is_draught_lobby = pd.Series(["NO", "NO", "YES", "NO"])
-    expected_output = pd.Series([0.08, 0, 0, 0.6])
+    building_volume = pd.Series([321, 100, 200])
+    no_chimneys = pd.Series([0, 0, 1])
+    no_open_flues = pd.Series([0, 0, 1])
+    no_fans = pd.Series([1, 0, 1])
+    no_room_heaters = pd.Series([0, 0, 1])
+    is_draught_lobby = pd.Series(["NO", "YES", "NO"])
+    expected_output = pd.Series([0.08, 0, 0.6])
 
-    output = vent._calculate_infiltration_rate_due_to_openings(
+    output = vent.calculate_infiltration_rate_due_to_openings(
         building_volume=building_volume,
         no_chimneys=no_chimneys,
         no_open_flues=no_open_flues,
         no_fans=no_fans,
         no_room_heaters=no_room_heaters,
         is_draught_lobby=is_draught_lobby,
-        draught_lobby_boolean=vent.YES_NO,
     )
 
     assert_series_equal(output.round(2), expected_output)
@@ -69,7 +68,7 @@ def test_calculate_infiltration_rate(monkeypatch):
 
     monkeypatch.setattr(
         vent,
-        "_calculate_infiltration_rate_due_to_openings",
+        "calculate_infiltration_rate_due_to_openings",
         _mock_calculate_infiltration_rate_due_to_openings,
     )
     monkeypatch.setattr(
@@ -93,7 +92,6 @@ def test_calculate_infiltration_rate(monkeypatch):
         percentage_draught_stripped=None,
         is_floor_suspended=None,
         structure_type=None,
-        draught_lobby_boolean=None,
         suspended_floor_types=None,
         structure_types=None,
         permeability_test_boolean=None,

@@ -7,6 +7,9 @@ Structure Types
 - Unknown are Masonry as 82/96 buildings are masonry
 - Concrete has an infiltration rate of 0
 """
+from decimal import DivisionByZero
+from typing import Union
+
 import numpy as np
 import pandas as pd
 
@@ -35,27 +38,76 @@ STRUCTURE_TYPES = {
 
 YES_NO = {"YES": True, "NO": False}
 
+Series = Union[int, pd.Series, np.array]
 
-def _calculate_infiltration_rate_due_to_openings(
-    building_volume,
-    no_chimneys,
-    no_open_flues,
-    no_fans,
-    no_room_heaters,
-    is_draught_lobby,
-    draught_lobby_boolean,
-):
-    infiltration_rate_due_to_openings = (
-        no_chimneys * 40 + no_open_flues * 20 + no_fans * 10 + no_room_heaters * 40
+
+def _calculate_infiltration_rate_due_to_opening(
+    no_openings: Series, building_volume: Series, ventilation_rate: int
+) -> Series:
+    is_building_volume_zero = building_volume == 0
+    if is_building_volume_zero.any():
+        raise DivisionByZero(
+            "Please remove buildings with zero volume, otherwise they will have an"
+            " infinite infiltration rate!"
+        )
+    return no_openings * ventilation_rate / building_volume
+
+
+def calculate_infiltration_rate_due_to_chimneys(
+    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 40
+) -> Series:
+    return _calculate_infiltration_rate_due_to_opening(
+        no_chimneys, building_volume, ventilation_rate
     )
-    is_building_empty = building_volume == 0
-    infiltration_rate_due_to_draught_lobby = is_draught_lobby.map(
-        draught_lobby_boolean
-    ).map({True: 0, False: 0.05})
-    return building_volume.where(
-        is_building_empty,
-        infiltration_rate_due_to_openings / building_volume
-        + infiltration_rate_due_to_draught_lobby,
+
+
+def calculate_infiltration_rate_due_to_open_flues(
+    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 20
+) -> Series:
+    return _calculate_infiltration_rate_due_to_opening(
+        no_chimneys, building_volume, ventilation_rate
+    )
+
+
+def calculate_infiltration_rate_due_to_fans(
+    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 10
+) -> Series:
+    return _calculate_infiltration_rate_due_to_opening(
+        no_chimneys, building_volume, ventilation_rate
+    )
+
+
+def calculate_infiltration_rate_due_to_room_heaters(
+    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 40
+) -> Series:
+    return _calculate_infiltration_rate_due_to_opening(
+        no_chimneys, building_volume, ventilation_rate
+    )
+
+
+def calculate_infiltration_rate_due_to_draught_lobby(
+    is_draught_lobby: Series,
+) -> Series:
+    yes_or_no_map = {"YES": True, "NO": False}
+    return is_draught_lobby.map(yes_or_no_map).map({True: 0, False: 0.05})
+
+
+def calculate_infiltration_rate_due_to_openings(
+    building_volume: Series,
+    no_chimneys: Series,
+    no_open_flues: Series,
+    no_fans: Series,
+    no_room_heaters: Series,
+    is_draught_lobby: Series,
+) -> Series:
+    return (
+        calculate_infiltration_rate_due_to_chimneys(no_chimneys, building_volume)
+        + calculate_infiltration_rate_due_to_open_flues(no_open_flues, building_volume)
+        + calculate_infiltration_rate_due_to_fans(no_fans, building_volume)
+        + calculate_infiltration_rate_due_to_room_heaters(
+            no_room_heaters, building_volume
+        )
+        + calculate_infiltration_rate_due_to_draught_lobby(is_draught_lobby)
     )
 
 
@@ -107,19 +159,17 @@ def calculate_infiltration_rate(
     percentage_draught_stripped,
     is_floor_suspended,
     structure_type,
-    draught_lobby_boolean=YES_NO,
     suspended_floor_types=SUSPENDED_FLOOR_TYPES,
     structure_types=STRUCTURE_TYPES,
     permeability_test_boolean=YES_NO,
 ):
-    infiltration_rate_due_to_openings = _calculate_infiltration_rate_due_to_openings(
+    infiltration_rate_due_to_openings = calculate_infiltration_rate_due_to_openings(
         building_volume=building_volume,
         no_chimneys=no_chimneys,
         no_open_flues=no_open_flues,
         no_fans=no_fans,
         no_room_heaters=no_room_heaters,
         is_draught_lobby=is_draught_lobby,
-        draught_lobby_boolean=draught_lobby_boolean,
     )
 
     infiltration_rate_due_to_structure = _calculate_infiltration_rate_due_to_structure(
