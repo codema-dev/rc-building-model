@@ -16,30 +16,6 @@ import numpy as np
 import pandas as pd
 
 
-VENTILATION_METHODS = {
-    "Natural vent.": "natural",
-    "Bal.whole mech.vent heat recvr": "mech",
-    "Whole house extract vent.": "outside",
-    "Pos input vent.- loft": "loft",
-    "Pos input vent.- outside": "outside",
-    "Bal.whole mech.vent no heat re": "heat_recovery",
-}
-
-SUSPENDED_FLOOR_TYPES = {
-    "No                            ": "no",
-    "Yes (Unsealed)                ": "unsealed",
-    "Yes (Sealed)                  ": "sealed",
-}
-
-STRUCTURE_TYPES = {
-    "Masonry                       ": "masonry",
-    "Please select                 ": np.nan,
-    "Timber or Steel Frame         ": "timber_or_steel",
-    "Insulated Conctete Form       ": "concrete",
-}
-
-YES_NO = {"YES": True, "NO": False}
-
 Series = Union[int, pd.Series, np.array]
 OptionalMap = Optional[Dict[str, str]]
 
@@ -119,36 +95,43 @@ def calculate_infiltration_rate_due_to_height(no_storeys: Series) -> Series:
 
 
 def calculate_infiltration_rate_due_to_structure_type(
-    structure_type: Series, structure_type_map: OptionalMap = None
+    structure_type: Series, unknown_structure_infiltration_rate: float = 0.35
 ) -> Series:
-    if not structure_type_map:
-        structure_type_map = {
-            "Masonry                       ": "masonry",
-            "Please select                 ": np.nan,
-            "Timber or Steel Frame         ": "timber_or_steel",
-            "Insulated Conctete Form       ": "concrete",
-        }
-    return (
-        structure_type.map(structure_type_map)
-        .map({"masonry": 0.35, "timber_or_steel": 0.25, "concrete": 0})  # ASSUMPTION
-        .fillna(0.35)  # ASSUMPTION
-    )
+    acceptable_structure_types = [
+        "unknown",
+        "masonry",
+        "timber_or_steel",
+        "concrete",
+    ]
+    if not np.in1d(structure_type.unique(), acceptable_structure_types).all():
+        raise ValueError(
+            f"Only {acceptable_structure_types} structure types are supported!"
+            " Please rename your structure types to match these, or if it is"
+            " is another type entirely either fork this repository or submit a"
+            " pull request to implement it!"
+        )
+    infiltration_rate_map = {
+        "unknown": unknown_structure_infiltration_rate,
+        "masonry": 0.35,
+        "timber_or_steel": 0.25,
+        "concrete": 0,
+    }
+    return structure_type.map(infiltration_rate_map)
 
 
 def calculate_infiltration_rate_due_to_suspended_floor(
-    is_floor_suspended: Series, floor_types_map: OptionalMap = None
+    is_floor_suspended: Series,
 ) -> Series:
-    if not floor_types_map:
-        floor_types_map = {
-            "No                            ": "no",
-            "Yes (Unsealed)                ": "unsealed",
-            "Yes (Sealed)                  ": "sealed",
-        }
-    return (
-        is_floor_suspended.map(floor_types_map)
-        .map({"no": 0, "sealed": 0.1, "unsealed": 0.2})
-        .fillna(0)
-    )
+    acceptable_suspended_floor_types = ["none", "sealed", "unsealed"]
+    if not np.in1d(is_floor_suspended.unique(), acceptable_suspended_floor_types).all():
+        raise ValueError(
+            f"Only {acceptable_suspended_floor_types} floor types are supported!"
+            " Please rename your floor types to match these, or if it is"
+            " is another type entirely either fork this repository or submit a"
+            " pull request to implement it!"
+        )
+    infiltration_rate_map = {"none": 0, "sealed": 0.1, "unsealed": 0.2}
+    return is_floor_suspended.map(infiltration_rate_map)
 
 
 def calculate_infiltration_rate_due_to_draught(

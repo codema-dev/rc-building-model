@@ -32,12 +32,8 @@ def test_calculate_infiltration_rate_due_to_structure():
     permeability_test_result = pd.Series([0.15, np.nan, np.nan])
     no_storeys = pd.Series([np.nan, 2, 1])
     percentage_draught_stripped = pd.Series([np.nan, 100, 75])
-    is_floor_suspended = pd.Series(
-        [np.nan, "No                            ", "Yes (Unsealed)                "]
-    )
-    structure_type = pd.Series(
-        [np.nan, "Masonry                       ", "Timber or Steel Frame         "]
-    )
+    is_floor_suspended = pd.Series(["none", "none", "unsealed"])
+    structure_type = pd.Series(["unknown", "masonry", "timber_or_steel"])
     expected_output = pd.Series([0.15, 0.5, 0.55])
 
     output = vent.calculate_infiltration_rate_due_to_structure(
