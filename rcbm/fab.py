@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def calculate_fabric_component_heat_loss(
+def calculate_fabric_component_heat_loss_coefficient(
     component_area: pd.Series,
     component_uvalue: pd.Series,
     thermal_bridging_factor: float = 0.05,
@@ -11,7 +11,7 @@ def calculate_fabric_component_heat_loss(
     return thermal_bridging + heat_loss_via_plane_element
 
 
-def calculate_fabric_heat_loss(
+def calculate_fabric_heat_loss_coefficient(
     roof_area: pd.Series,
     roof_uvalue: pd.Series,
     wall_area: pd.Series,
@@ -47,10 +47,12 @@ def _raise_for_zero_floor_areas(floor_areas: pd.Series) -> None:
 
 
 def calculate_heat_loss_parameter(
-    fabric_heat_loss: pd.Series,
-    ventilation_heat_loss: pd.Series,
+    fabric_heat_loss_coefficient: pd.Series,
+    ventilation_heat_loss_coefficient: pd.Series,
     total_floor_area: pd.Series,
 ) -> pd.Series:
     _raise_for_zero_floor_areas(total_floor_area)
-    heat_loss_coefficient = fabric_heat_loss + ventilation_heat_loss
+    heat_loss_coefficient = (
+        fabric_heat_loss_coefficient + ventilation_heat_loss_coefficient
+    )
     return heat_loss_coefficient / total_floor_area

@@ -6,7 +6,7 @@ import pytest
 from rcbm import fab
 
 
-def test_calculate_fabric_heat_loss():
+def test_calculate_fabric_heat_loss_coefficient():
     """Output is equivalent to DEAP 4.2.0 example A"""
     floor_area = pd.Series([63])
     roof_area = pd.Series([63])
@@ -22,7 +22,7 @@ def test_calculate_fabric_heat_loss():
 
     expected_output = pd.Series([68], dtype="int64")
 
-    output = fab.calculate_fabric_heat_loss(
+    output = fab.calculate_fabric_heat_loss_coefficient(
         roof_area=roof_area,
         roof_uvalue=roof_uvalue,
         wall_area=wall_area,
@@ -42,14 +42,14 @@ def test_calculate_fabric_heat_loss():
 
 def test_calculate_heat_loss_parameter():
     """Output is equivalent to DEAP 4.2.0 example A"""
-    fabric_heat_loss = pd.Series([0.5])
-    ventilation_heat_loss = pd.Series([0.5])
+    fabric_heat_loss_coefficient = pd.Series([0.5])
+    ventilation_heat_loss_coefficient = pd.Series([0.5])
     total_floor_area = pd.Series([1])
     expected_output = pd.Series([1], dtype="float64")
 
     output = fab.calculate_heat_loss_parameter(
-        fabric_heat_loss=fabric_heat_loss,
-        ventilation_heat_loss=ventilation_heat_loss,
+        fabric_heat_loss_coefficient=fabric_heat_loss_coefficient,
+        ventilation_heat_loss_coefficient=ventilation_heat_loss_coefficient,
         total_floor_area=total_floor_area,
     )
 
@@ -61,7 +61,7 @@ def test_calculate_heat_loss_parameter_raises_zerodivisionerror(floor_area):
     empty_series = pd.Series([np.nan])
     with pytest.raises(ZeroDivisionError):
         fab.calculate_heat_loss_parameter(
-            fabric_heat_loss=empty_series,
-            ventilation_heat_loss=empty_series,
+            fabric_heat_loss_coefficient=empty_series,
+            ventilation_heat_loss_coefficient=empty_series,
             total_floor_area=floor_area,
         )

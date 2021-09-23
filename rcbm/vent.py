@@ -284,7 +284,7 @@ def calculate_effective_air_rate_change(
     return pd.concat([natural, loft, outside, mechanical, heat_recovery]).sort_index()
 
 
-def calculate_ventilation_heat_loss(
+def calculate_ventilation_heat_loss_coefficient(
     building_volume: pd.Series,
     effective_air_rate_change: pd.Series,
     ventilation_heat_loss_constant: float = 0.33,  # SEAI, DEAP 4.2.0

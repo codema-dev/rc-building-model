@@ -137,14 +137,14 @@ def test_calculate_effective_air_rate_change():
     assert_series_equal(output.round(2), expected_output)
 
 
-def test_calculate_ventilation_heat_loss(monkeypatch):
+def test_calculate_ventilation_heat_loss_coefficient(monkeypatch):
     """Output is equivalent to DEAP 4.2.0 example A"""
     building_volume = pd.Series([321])
     effective_air_rate_change = pd.Series([0.5])
     ventilation_heat_loss_constant = 0.33
     expected_output = pd.Series([53], dtype="float64")
 
-    output = vent.calculate_ventilation_heat_loss(
+    output = vent.calculate_ventilation_heat_loss_coefficient(
         building_volume=building_volume,
         effective_air_rate_change=effective_air_rate_change,
         ventilation_heat_loss_constant=ventilation_heat_loss_constant,
