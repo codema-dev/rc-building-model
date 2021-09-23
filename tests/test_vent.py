@@ -96,12 +96,12 @@ def test_calculate_effective_air_rate_change():
     n_methods = 6
     ventilation_method = pd.Series(
         [
-            "Natural vent.",
-            "Pos input vent.- loft",
-            "Pos input vent.- outside",
-            "Whole house extract vent.",
-            "Bal.whole mech.vent no heat re",
-            "Bal.whole mech.vent heat recvr",
+            "natural_ventilation",
+            "positive_input_ventilation_from_loft",
+            "positive_input_ventilation_from_outside",
+            "positive_input_ventilation_from_outside",
+            "mechanical_ventilation_no_heat_recovery",
+            "mechanical_ventilation_heat_recovery",
         ]
     )
     building_volume = pd.Series([321] * n_methods)
@@ -114,7 +114,6 @@ def test_calculate_effective_air_rate_change():
         building_volume=building_volume,
         infiltration_rate=infiltration_rate,
         heat_exchanger_efficiency=heat_exchanger_efficiency,
-        ventilation_method_names=vent.VENTILATION_METHODS,
     )
 
     assert_series_equal(output.round(2), expected_output)

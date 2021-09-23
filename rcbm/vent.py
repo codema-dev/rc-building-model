@@ -225,59 +225,81 @@ def calculate_infiltration_rate(
     )
 
 
-def _calculate_natural_ventilation_air_rate_change(infiltration_rate):
+def _calculate_natural_ventilation_air_rate_change(infiltration_rate: Series) -> Series:
     return infiltration_rate.where(
         infiltration_rate > 1, 0.5 + (infiltration_rate ** 2) * 0.5
     )
 
 
-def _calculate_loft_ventilation_air_rate_change(infiltration_rate, building_volume):
+def _calculate_loft_ventilation_air_rate_change(
+    infiltration_rate: Series, building_volume: Series
+) -> Series:
     return (
         _calculate_natural_ventilation_air_rate_change(infiltration_rate)
         + 20 / building_volume
     )
 
 
-def _calculate_outside_ventilation_air_rate_change(infiltration_rate):
+def _calculate_outside_ventilation_air_rate_change(infiltration_rate: Series) -> Series:
     return np.maximum([0.5] * len(infiltration_rate), infiltration_rate + 0.25)
 
 
-def _calculate_mech_ventilation_air_rate_change(infiltration_rate):
+def _calculate_mech_ventilation_air_rate_change(infiltration_rate: Series) -> Series:
     return infiltration_rate + 0.5
 
 
 def _calculate_heat_recovery_ventilation_air_rate_change(
-    infiltration_rate,
-    heat_exchanger_efficiency,
-):
+    infiltration_rate: Series,
+    heat_exchanger_efficiency: Series,
+) -> Series:
     return infiltration_rate + 0.5 * (1 - heat_exchanger_efficiency / 100)
 
 
 def calculate_effective_air_rate_change(
-    ventilation_method,
-    building_volume,
-    infiltration_rate,
-    heat_exchanger_efficiency,
-    ventilation_method_names=VENTILATION_METHODS,
+    ventilation_method: Series,
+    building_volume: Series,
+    infiltration_rate: Series,
+    heat_exchanger_efficiency: Series,
 ):
-    methods = ventilation_method.map(ventilation_method_names)
+    acceptable_ventilation_methods = [
+        "positive_input_ventilation_from_loft",
+        "natural_ventilation",
+        "mechanical_ventilation_no_heat_recovery",
+        "mechanical_ventilation_heat_recovery",
+        "positive_input_ventilation_from_outside",
+    ]
+    if not np.in1d(ventilation_method.unique(), acceptable_ventilation_methods).all():
+        raise ValueError(
+            f"Only {acceptable_ventilation_methods} ventilation methods are supported!"
+            " Please rename your ventilation methods to match these, or if it is"
+            " is another method entirely either fork this repository or submit a"
+            " pull request to implement it!"
+        )
+
     natural = _calculate_natural_ventilation_air_rate_change(
-        infiltration_rate[methods == "natural"]
+        infiltration_rate[ventilation_method == "natural_ventilation"]
     )
     loft = _calculate_loft_ventilation_air_rate_change(
-        infiltration_rate[methods == "loft"], building_volume[methods == "loft"]
+        infiltration_rate[ventilation_method == "positive_input_ventilation_from_loft"],
+        building_volume[ventilation_method == "positive_input_ventilation_from_loft"],
     )
     outside = _calculate_outside_ventilation_air_rate_change(
-        infiltration_rate[methods == "outside"]
+        infiltration_rate[
+            ventilation_method == "positive_input_ventilation_from_outside"
+        ]
     )
-    mech = _calculate_mech_ventilation_air_rate_change(
-        infiltration_rate[methods == "mech"]
+    mechanical = _calculate_mech_ventilation_air_rate_change(
+        infiltration_rate[
+            ventilation_method == "mechanical_ventilation_no_heat_recovery"
+        ]
     )
     heat_recovery = _calculate_heat_recovery_ventilation_air_rate_change(
-        infiltration_rate[methods == "heat_recovery"],
-        heat_exchanger_efficiency[methods == "heat_recovery"],
+        infiltration_rate[ventilation_method == "mechanical_ventilation_heat_recovery"],
+        heat_exchanger_efficiency[
+            ventilation_method == "mechanical_ventilation_heat_recovery"
+        ],
     )
-    return pd.concat([natural, loft, outside, mech, heat_recovery]).sort_index()
+    return pd.concat([natural, loft, outside, mechanical, heat_recovery]).sort_index()
 
 
 def calculate_ventilation_heat_loss(
