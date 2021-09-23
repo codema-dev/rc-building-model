@@ -1,8 +1,23 @@
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
+import pytest
 
 from rcbm import vent
+
+
+def test_calculate_infiltration_rate_due_to_structure_type_raises_error_on_invalid_input():
+    with pytest.raises(ValueError):
+        vent.calculate_infiltration_rate_due_to_structure_type(
+            pd.Series(["unknown", None])
+        )
+
+
+def test_calculate_infiltration_rate_due_to_suspended_floor_raises_error_on_invalid_input():
+    with pytest.raises(ValueError):
+        vent.calculate_infiltration_rate_due_to_suspended_floor(
+            pd.Series(["none", None])
+        )
 
 
 def test_calculate_infiltration_rate_due_to_openings():
@@ -25,6 +40,13 @@ def test_calculate_infiltration_rate_due_to_openings():
     )
 
     assert_series_equal(output.round(2), expected_output)
+
+
+def test_calculate_air_rate_change_raises_error_on_invalid_input():
+    with pytest.raises(ValueError):
+        vent.calculate_effective_air_rate_change(
+            pd.Series(["natural_ventilation", None]), None, None, None
+        )
 
 
 def test_calculate_infiltration_rate_due_to_structure():
