@@ -180,6 +180,12 @@ def calculate_infiltration_rate_due_to_structure(
     )
 
 
+def calculate_infiltration_rate_adjustment_factor(
+    infiltration_rate: Series, no_sides_sheltered: Series
+) -> Series:
+    return infiltration_rate * (1 - no_sides_sheltered * 0.075)
+
+
 def calculate_infiltration_rate(
     no_sides_sheltered,
     building_volume,
@@ -214,7 +220,9 @@ def calculate_infiltration_rate(
     infiltration_rate = (
         infiltration_rate_due_to_openings + infiltration_rate_due_to_structure
     )
-    return infiltration_rate * (1 - no_sides_sheltered * 0.075)
+    return calculate_infiltration_rate_adjustment_factor(
+        infiltration_rate, no_sides_sheltered
+    )
 
 
 def _calculate_natural_ventilation_air_rate_change(infiltration_rate):
