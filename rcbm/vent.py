@@ -8,21 +8,14 @@ Structure Types
 - Concrete has an infiltration rate of 0
 """
 from decimal import DivisionByZero
-from typing import Dict
-from typing import Optional
-from typing import Union
 
 import numpy as np
 import pandas as pd
 
 
-Series = Union[int, pd.Series, np.array]
-OptionalMap = Optional[Dict[str, str]]
-
-
 def _calculate_infiltration_rate_due_to_opening(
-    no_openings: Series, building_volume: Series, ventilation_rate: int
-) -> Series:
+    no_openings: pd.Series, building_volume: pd.Series, ventilation_rate: int
+) -> pd.Series:
     is_building_volume_zero = building_volume == 0
     if is_building_volume_zero.any():
         raise DivisionByZero(
@@ -33,52 +26,52 @@ def _calculate_infiltration_rate_due_to_opening(
 
 
 def calculate_infiltration_rate_due_to_chimneys(
-    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 40
-) -> Series:
+    no_chimneys: pd.Series, building_volume: pd.Series, ventilation_rate: int = 40
+) -> pd.Series:
     return _calculate_infiltration_rate_due_to_opening(
         no_chimneys, building_volume, ventilation_rate
     )
 
 
 def calculate_infiltration_rate_due_to_open_flues(
-    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 20
-) -> Series:
+    no_chimneys: pd.Series, building_volume: pd.Series, ventilation_rate: int = 20
+) -> pd.Series:
     return _calculate_infiltration_rate_due_to_opening(
         no_chimneys, building_volume, ventilation_rate
     )
 
 
 def calculate_infiltration_rate_due_to_fans(
-    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 10
-) -> Series:
+    no_chimneys: pd.Series, building_volume: pd.Series, ventilation_rate: int = 10
+) -> pd.Series:
     return _calculate_infiltration_rate_due_to_opening(
         no_chimneys, building_volume, ventilation_rate
     )
 
 
 def calculate_infiltration_rate_due_to_room_heaters(
-    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 40
-) -> Series:
+    no_chimneys: pd.Series, building_volume: pd.Series, ventilation_rate: int = 40
+) -> pd.Series:
     return _calculate_infiltration_rate_due_to_opening(
         no_chimneys, building_volume, ventilation_rate
     )
 
 
 def calculate_infiltration_rate_due_to_draught_lobby(
-    is_draught_lobby: Series,
-) -> Series:
+    is_draught_lobby: pd.Series,
+) -> pd.Series:
     yes_or_no_map = {"YES": True, "NO": False}
     return is_draught_lobby.map(yes_or_no_map).map({True: 0, False: 0.05})
 
 
 def calculate_infiltration_rate_due_to_openings(
-    building_volume: Series,
-    no_chimneys: Series,
-    no_open_flues: Series,
-    no_fans: Series,
-    no_room_heaters: Series,
-    is_draught_lobby: Series,
-) -> Series:
+    building_volume: pd.Series,
+    no_chimneys: pd.Series,
+    no_open_flues: pd.Series,
+    no_fans: pd.Series,
+    no_room_heaters: pd.Series,
+    is_draught_lobby: pd.Series,
+) -> pd.Series:
     return (
         calculate_infiltration_rate_due_to_chimneys(no_chimneys, building_volume)
         + calculate_infiltration_rate_due_to_open_flues(no_open_flues, building_volume)
@@ -90,13 +83,13 @@ def calculate_infiltration_rate_due_to_openings(
     )
 
 
-def calculate_infiltration_rate_due_to_height(no_storeys: Series) -> Series:
+def calculate_infiltration_rate_due_to_height(no_storeys: pd.Series) -> pd.Series:
     return (no_storeys - 1) * 0.1
 
 
 def calculate_infiltration_rate_due_to_structure_type(
-    structure_type: Series, unknown_structure_infiltration_rate: float = 0.35
-) -> Series:
+    structure_type: pd.Series, unknown_structure_infiltration_rate: float = 0.35
+) -> pd.Series:
     acceptable_structure_types = [
         "unknown",
         "masonry",
@@ -120,8 +113,8 @@ def calculate_infiltration_rate_due_to_structure_type(
 
 
 def calculate_infiltration_rate_due_to_suspended_floor(
-    is_floor_suspended: Series,
-) -> Series:
+    is_floor_suspended: pd.Series,
+) -> pd.Series:
     acceptable_suspended_floor_types = ["none", "sealed", "unsealed"]
     if not np.in1d(is_floor_suspended.unique(), acceptable_suspended_floor_types).all():
         raise ValueError(
@@ -135,18 +128,18 @@ def calculate_infiltration_rate_due_to_suspended_floor(
 
 
 def calculate_infiltration_rate_due_to_draught(
-    percentage_draught_stripped: Series,
-) -> Series:
+    percentage_draught_stripped: pd.Series,
+) -> pd.Series:
     return 0.25 - (0.2 * (percentage_draught_stripped / 100))
 
 
 def calculate_infiltration_rate_due_to_structure(
-    permeability_test_result,
-    no_storeys,
-    percentage_draught_stripped,
-    is_floor_suspended,
-    structure_type,
-):
+    permeability_test_result: pd.Series,
+    no_storeys: pd.Series,
+    percentage_draught_stripped: pd.Series,
+    is_floor_suspended: pd.Series,
+    structure_type: pd.Series,
+) -> pd.Series:
     theoretical_infiltration_rate = (
         calculate_infiltration_rate_due_to_height(no_storeys)
         + calculate_infiltration_rate_due_to_structure_type(structure_type)
@@ -164,25 +157,25 @@ def calculate_infiltration_rate_due_to_structure(
 
 
 def calculate_infiltration_rate_adjustment_factor(
-    infiltration_rate: Series, no_sides_sheltered: Series
-) -> Series:
+    infiltration_rate: pd.Series, no_sides_sheltered: pd.Series
+) -> pd.Series:
     return infiltration_rate * (1 - no_sides_sheltered * 0.075)
 
 
 def calculate_infiltration_rate(
-    no_sides_sheltered,
-    building_volume,
-    no_chimneys,
-    no_open_flues,
-    no_fans,
-    no_room_heaters,
-    is_draught_lobby,
-    permeability_test_result,
-    no_storeys,
-    percentage_draught_stripped,
-    is_floor_suspended,
-    structure_type,
-):
+    no_sides_sheltered: pd.Series,
+    building_volume: pd.Series,
+    no_chimneys: pd.Series,
+    no_open_flues: pd.Series,
+    no_fans: pd.Series,
+    no_room_heaters: pd.Series,
+    is_draught_lobby: pd.Series,
+    permeability_test_result: pd.Series,
+    no_storeys: pd.Series,
+    percentage_draught_stripped: pd.Series,
+    is_floor_suspended: pd.Series,
+    structure_type: pd.Series,
+) -> pd.Series:
     infiltration_rate_due_to_openings = calculate_infiltration_rate_due_to_openings(
         building_volume=building_volume,
         no_chimneys=no_chimneys,
@@ -208,42 +201,48 @@ def calculate_infiltration_rate(
     )
 
 
-def _calculate_natural_ventilation_air_rate_change(infiltration_rate: Series) -> Series:
+def _calculate_natural_ventilation_air_rate_change(
+    infiltration_rate: pd.Series,
+) -> pd.Series:
     return infiltration_rate.where(
         infiltration_rate > 1, 0.5 + (infiltration_rate ** 2) * 0.5
     )
 
 
 def _calculate_loft_ventilation_air_rate_change(
-    infiltration_rate: Series, building_volume: Series
-) -> Series:
+    infiltration_rate: pd.Series, building_volume: pd.Series
+) -> pd.Series:
     return (
         _calculate_natural_ventilation_air_rate_change(infiltration_rate)
         + 20 / building_volume
     )
 
 
-def _calculate_outside_ventilation_air_rate_change(infiltration_rate: Series) -> Series:
+def _calculate_outside_ventilation_air_rate_change(
+    infiltration_rate: pd.Series,
+) -> pd.Series:
     return np.maximum([0.5] * len(infiltration_rate), infiltration_rate + 0.25)
 
 
-def _calculate_mech_ventilation_air_rate_change(infiltration_rate: Series) -> Series:
+def _calculate_mech_ventilation_air_rate_change(
+    infiltration_rate: pd.Series,
+) -> pd.Series:
     return infiltration_rate + 0.5
 
 
 def _calculate_heat_recovery_ventilation_air_rate_change(
-    infiltration_rate: Series,
-    heat_exchanger_efficiency: Series,
-) -> Series:
+    infiltration_rate: pd.Series,
+    heat_exchanger_efficiency: pd.Series,
+) -> pd.Series:
     return infiltration_rate + 0.5 * (1 - heat_exchanger_efficiency / 100)
 
 
 def calculate_effective_air_rate_change(
-    ventilation_method: Series,
-    building_volume: Series,
-    infiltration_rate: Series,
-    heat_exchanger_efficiency: Series,
-):
+    ventilation_method: pd.Series,
+    building_volume: pd.Series,
+    infiltration_rate: pd.Series,
+    heat_exchanger_efficiency: pd.Series,
+) -> pd.Series:
     acceptable_ventilation_methods = [
         "positive_input_ventilation_from_loft",
         "natural_ventilation",
@@ -286,8 +285,8 @@ def calculate_effective_air_rate_change(
 
 
 def calculate_ventilation_heat_loss(
-    building_volume,
-    effective_air_rate_change,
-    ventilation_heat_loss_constant=0.33,  # SEAI, DEAP 4.2.0
-):
+    building_volume: pd.Series,
+    effective_air_rate_change: pd.Series,
+    ventilation_heat_loss_constant: float = 0.33,  # SEAI, DEAP 4.2.0
+) -> pd.Series:
     return building_volume * ventilation_heat_loss_constant * effective_air_rate_change
