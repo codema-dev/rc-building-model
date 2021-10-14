@@ -1,9 +1,24 @@
+import hypothesis
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
+import pandera as pa
 import pytest
 
 from rcbm import vent
+
+
+@hypothesis.given(
+    no_openings=vent.schema("no_openings").strategy(size=5),
+    building_volume=vent.schema("building_volume").strategy(size=5),
+)
+def test_calculate_infiltration_rate_due_to_opening_on_invalid_inputs(
+    no_openings, building_volume
+):
+    result = vent.calculate_infiltration_rate_due_to_opening(
+        no_openings, building_volume, 10
+    )
+    assert not result.isna().any()
 
 
 def test_calculate_infiltration_rate_due_to_structure_type_raises_error_on_invalid_input():

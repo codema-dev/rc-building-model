@@ -1,66 +1,80 @@
-"""
-Replicate DEAP 4.2.2 Vent Excel calculations
-
-Assumptions:
-
-Structure Types
-- Unknown are Masonry as 82/96 buildings are masonry
-- Concrete has an infiltration rate of 0
-"""
-from decimal import DivisionByZero
-
 import numpy as np
 import pandas as pd
 from pandas.core.dtypes.common import is_bool_dtype
+import pandera as pa
+from pandera.typing import Series
 
 
-def _calculate_infiltration_rate_due_to_opening(
-    no_openings: pd.Series, building_volume: pd.Series, ventilation_rate: int
-) -> pd.Series:
-    is_building_volume_zero = building_volume == 0
-    if is_building_volume_zero.any():
-        raise DivisionByZero(
-            "Please remove buildings with zero volume, otherwise they will have an"
-            " infinite infiltration rate!"
-        )
+def schema(name: str) -> pa.SeriesSchema:
+    _schemas = {
+        "no_openings": pa.SeriesSchema(
+            int,
+            nullable=False,
+        ),
+        "building_volume": pa.SeriesSchema(
+            int,
+            checks=pa.Check(
+                lambda s: not (s == 0).any(),
+                name="Has zero values!",
+                error="Please remove buildings with zero volume, otherwise they will"
+                " have an infinite infiltration rate!",
+            ),
+            nullable=False,
+        ),
+        "infiltration_rate_due_to_opening": pa.SeriesSchema(
+            float,
+            nullable=False,
+        ),
+    }
+    return _schemas[name]
+
+
+@pa.check_io(
+    no_openings=schema("no_openings"),
+    building_volume=schema("building_volume"),
+    out=schema("infiltration_rate_due_to_opening"),
+)
+def calculate_infiltration_rate_due_to_opening(
+    no_openings: Series, building_volume: Series, ventilation_rate: int
+) -> Series:
     return no_openings * ventilation_rate / building_volume
 
 
 def calculate_infiltration_rate_due_to_chimneys(
-    no_chimneys: pd.Series, building_volume: pd.Series, ventilation_rate: int = 40
-) -> pd.Series:
-    return _calculate_infiltration_rate_due_to_opening(
+    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 40
+) -> Series:
+    return calculate_infiltration_rate_due_to_opening(
         no_chimneys, building_volume, ventilation_rate
     )
 
 
 def calculate_infiltration_rate_due_to_open_flues(
-    no_chimneys: pd.Series, building_volume: pd.Series, ventilation_rate: int = 20
-) -> pd.Series:
-    return _calculate_infiltration_rate_due_to_opening(
+    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 20
+) -> Series:
+    return calculate_infiltration_rate_due_to_opening(
         no_chimneys, building_volume, ventilation_rate
     )
 
 
 def calculate_infiltration_rate_due_to_fans(
-    no_chimneys: pd.Series, building_volume: pd.Series, ventilation_rate: int = 10
-) -> pd.Series:
-    return _calculate_infiltration_rate_due_to_opening(
+    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 10
+) -> Series:
+    return calculate_infiltration_rate_due_to_opening(
         no_chimneys, building_volume, ventilation_rate
     )
 
 
 def calculate_infiltration_rate_due_to_room_heaters(
-    no_chimneys: pd.Series, building_volume: pd.Series, ventilation_rate: int = 40
-) -> pd.Series:
-    return _calculate_infiltration_rate_due_to_opening(
+    no_chimneys: Series, building_volume: Series, ventilation_rate: int = 40
+) -> Series:
+    return calculate_infiltration_rate_due_to_opening(
         no_chimneys, building_volume, ventilation_rate
     )
 
 
 def calculate_infiltration_rate_due_to_draught_lobby(
-    is_draught_lobby: pd.Series,
-) -> pd.Series:
+    is_draught_lobby: Series,
+) -> Series:
     if not is_bool_dtype(is_draught_lobby):
         raise ValueError(
             f"is_draught_lobby must be a boolean series (i.e. either True or False)!"
