@@ -63,6 +63,14 @@ def schema(name: str) -> pa.SeriesSchema:
             float,
             nullable=False,
         ),
+        "percentage_draught_stripped": pa.SeriesSchema(
+            (int, float),
+            nullable=False,
+        ),
+        "infiltration_rate_due_to_draught": pa.SeriesSchema(
+            float,
+            nullable=False,
+        ),
     }
     return _schemas[name]
 
@@ -174,6 +182,10 @@ def calculate_infiltration_rate_due_to_suspended_floor(
     return is_floor_suspended.map(infiltration_rate_map)
 
 
+@pa.check_io(
+    percentage_draught_stripped=schema("percentage_draught_stripped"),
+    out=schema("infiltration_rate_due_to_draught"),
+)
 def calculate_infiltration_rate_due_to_draught(
     percentage_draught_stripped: pd.Series,
 ) -> pd.Series:
@@ -193,7 +205,7 @@ def calculate_infiltration_rate_due_to_structure(
         + calculate_infiltration_rate_due_to_suspended_floor(is_floor_suspended)
         + calculate_infiltration_rate_due_to_draught(percentage_draught_stripped)
     )
-    infiltration_rate_is_available = permeability_test_result > 0
+    infiltration_rate_is_available = permeability_test_result.notna()
     return pd.Series(
         np.where(
             infiltration_rate_is_available,

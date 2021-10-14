@@ -59,6 +59,20 @@ def test_calculate_infiltration_rate_due_to_suspended_floor_on_invalid_inputs():
         vent.calculate_infiltration_rate_due_to_suspended_floor(pd.Series([None]))
 
 
+@hypothesis.given(
+    percentage_draught_stripped=vent.schema("percentage_draught_stripped").strategy(
+        size=5
+    ),
+)
+def test_calculate_infiltration_rate_due_to_draught_on_valid_inputs(
+    percentage_draught_stripped,
+):
+    result = vent.calculate_infiltration_rate_due_to_draught(
+        percentage_draught_stripped
+    )
+    assert not result.isna().any()
+
+
 def test_calculate_infiltration_rate_due_to_openings():
     """Output is equivalent to DEAP 4.2.0 example A"""
     building_volume = pd.Series([321, 100, 200])
@@ -92,7 +106,7 @@ def test_calculate_infiltration_rate_due_to_structure():
     """Output is equivalent to DEAP 4.2.0 example A"""
     permeability_test_result = pd.Series([0.15, np.nan, np.nan])
     no_storeys = pd.Series([2, 2, 1])
-    percentage_draught_stripped = pd.Series([np.nan, 100, 75])
+    percentage_draught_stripped = pd.Series([50, 100, 75])
     is_floor_suspended = pd.Series(["none", "none", "unsealed"])
     structure_type = pd.Series(["unknown", "masonry", "timber_or_steel"])
     expected_output = pd.Series([0.15, 0.5, 0.55])
