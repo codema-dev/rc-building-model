@@ -13,6 +13,14 @@ STRUCTURE_TYPES = [
 
 FLOOR_TYPES = ["none", "sealed", "unsealed"]
 
+VENTILATION_METHODS = [
+    "positive_input_ventilation_from_loft",
+    "natural_ventilation",
+    "mechanical_ventilation_no_heat_recovery",
+    "mechanical_ventilation_heat_recovery",
+    "positive_input_ventilation_from_outside",
+]
+
 
 def schema(name: str) -> pa.SeriesSchema:
     _schemas = {
@@ -81,6 +89,23 @@ def schema(name: str) -> pa.SeriesSchema:
         ),
         "no_sides_sheltered": pa.SeriesSchema(
             int,
+            nullable=False,
+        ),
+        "ventilation_method": pa.SeriesSchema(
+            str,
+            checks=pa.Check.isin(VENTILATION_METHODS),
+            nullable=False,
+        ),
+        "infiltration_rate": pa.SeriesSchema(
+            float,
+            nullable=False,
+        ),
+        "heat_exchanger_efficiency": pa.SeriesSchema(
+            (int, float),
+            nullable=True,
+        ),
+        "effective_air_rate_change": pa.SeriesSchema(
+            float,
             nullable=False,
         ),
     }
@@ -315,27 +340,19 @@ def _calculate_heat_recovery_ventilation_air_rate_change(
     return infiltration_rate + 0.5 * (1 - heat_exchanger_efficiency / 100)
 
 
+@pa.check_io(
+    ventilation_method=schema("ventilation_method"),
+    building_volume=schema("building_volume"),
+    infiltration_rate=schema("infiltration_rate"),
+    heat_exchanger_efficiency=schema("heat_exchanger_efficiency"),
+    out=schema("effective_air_rate_change"),
+)
 def calculate_effective_air_rate_change(
     ventilation_method: Series,
     building_volume: Series,
     infiltration_rate: Series,
     heat_exchanger_efficiency: Series,
 ) -> Series:
-    acceptable_ventilation_methods = [
-        "positive_input_ventilation_from_loft",
-        "natural_ventilation",
-        "mechanical_ventilation_no_heat_recovery",
-        "mechanical_ventilation_heat_recovery",
-        "positive_input_ventilation_from_outside",
-    ]
-    if not np.in1d(ventilation_method.unique(), acceptable_ventilation_methods).all():
-        raise ValueError(
-            f"Only {acceptable_ventilation_methods} ventilation methods are supported!"
-            " Please rename your ventilation methods to match these, or if it is"
-            " is another method entirely either fork this repository or submit a"
-            " pull request to implement it!"
-        )
-
     natural = _calculate_natural_ventilation_air_rate_change(
         infiltration_rate[ventilation_method == "natural_ventilation"]
     )

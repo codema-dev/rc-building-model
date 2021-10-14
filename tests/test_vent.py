@@ -105,13 +105,6 @@ def test_calculate_infiltration_rate_due_to_openings():
     assert_series_equal(output.round(2), expected_output)
 
 
-def test_calculate_air_rate_change_raises_error_on_invalid_input():
-    with pytest.raises(ValueError):
-        vent.calculate_effective_air_rate_change(
-            pd.Series(["natural_ventilation", None]), None, None, None
-        )
-
-
 def test_calculate_infiltration_rate_due_to_structure():
     """Output is equivalent to DEAP 4.2.0 example A"""
     permeability_test_result = pd.Series(
@@ -193,9 +186,11 @@ def test_calculate_effective_air_rate_change():
             "mechanical_ventilation_heat_recovery",
         ]
     )
-    building_volume = pd.Series([321] * n_methods)
-    infiltration_rate = pd.Series([0.2] * n_methods)
-    heat_exchanger_efficiency = pd.Series([0] * n_methods)
+    building_volume = pd.Series([321] * n_methods, name="building_volume")
+    infiltration_rate = pd.Series([0.2] * n_methods, name="infiltration_rate")
+    heat_exchanger_efficiency = pd.Series(
+        [0] * n_methods, name="heat_exchanger_efficiency"
+    )
     expected_output = pd.Series([0.52, 0.58, 0.5, 0.5, 0.7, 0.7])
 
     output = vent.calculate_effective_air_rate_change(
