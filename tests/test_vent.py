@@ -73,6 +73,16 @@ def test_calculate_infiltration_rate_due_to_draught_on_valid_inputs(
     assert not result.isna().any()
 
 
+@hypothesis.given(
+    no_sides_sheltered=vent.schema("no_sides_sheltered").strategy(size=5),
+)
+def test_calculate_infiltration_rate_adjustment_factor_on_valid_inputs(
+    no_sides_sheltered,
+):
+    result = vent.calculate_infiltration_rate_adjustment_factor(no_sides_sheltered)
+    assert not result.isna().any()
+
+
 def test_calculate_infiltration_rate_due_to_openings():
     """Output is equivalent to DEAP 4.2.0 example A"""
     building_volume = pd.Series([321, 100, 200])

@@ -79,6 +79,10 @@ def schema(name: str) -> pa.SeriesSchema:
             float,
             nullable=False,
         ),
+        "no_sides_sheltered": pa.SeriesSchema(
+            int,
+            nullable=False,
+        ),
     }
     return _schemas[name]
 
@@ -227,6 +231,9 @@ def calculate_infiltration_rate_due_to_structure(
     )
 
 
+@pa.check_io(
+    no_sides_sheltered=schema("no_sides_sheltered"),
+)
 def calculate_infiltration_rate_adjustment_factor(
     no_sides_sheltered: Series,
 ) -> Series:
@@ -267,8 +274,8 @@ def calculate_infiltration_rate(
     infiltration_rate = (
         infiltration_rate_due_to_openings + infiltration_rate_due_to_structure
     )
-    return calculate_infiltration_rate_adjustment_factor(
-        infiltration_rate, no_sides_sheltered
+    return infiltration_rate * calculate_infiltration_rate_adjustment_factor(
+        no_sides_sheltered
     )
 
 
