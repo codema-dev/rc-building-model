@@ -104,11 +104,19 @@ def test_calculate_air_rate_change_raises_error_on_invalid_input():
 
 def test_calculate_infiltration_rate_due_to_structure():
     """Output is equivalent to DEAP 4.2.0 example A"""
-    permeability_test_result = pd.Series([0.15, np.nan, np.nan])
-    no_storeys = pd.Series([2, 2, 1])
-    percentage_draught_stripped = pd.Series([50, 100, 75])
-    is_floor_suspended = pd.Series(["none", "none", "unsealed"])
-    structure_type = pd.Series(["unknown", "masonry", "timber_or_steel"])
+    permeability_test_result = pd.Series(
+        [0.15, np.nan, np.nan], name="permeability_test_result"
+    )
+    no_storeys = pd.Series([2, 2, 1], name="no_storeys")
+    percentage_draught_stripped = pd.Series(
+        [50, 100, 75], name="percentage_draught_stripped"
+    )
+    is_floor_suspended = pd.Series(
+        ["none", "none", "unsealed"], name="is_floor_suspended"
+    )
+    structure_type = pd.Series(
+        ["unknown", "masonry", "timber_or_steel"], name="structure_type"
+    )
     expected_output = pd.Series([0.15, 0.5, 0.55])
 
     output = vent.calculate_infiltration_rate_due_to_structure(

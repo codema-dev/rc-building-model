@@ -71,6 +71,14 @@ def schema(name: str) -> pa.SeriesSchema:
             float,
             nullable=False,
         ),
+        "permeability_test_result": pa.SeriesSchema(
+            float,
+            nullable=True,
+        ),
+        "infiltration_rate_due_to_structure": pa.SeriesSchema(
+            float,
+            nullable=False,
+        ),
     }
     return _schemas[name]
 
@@ -192,6 +200,10 @@ def calculate_infiltration_rate_due_to_draught(
     return 0.25 - (0.2 * (percentage_draught_stripped / 100))
 
 
+@pa.check_io(
+    permeability_test_result=schema("permeability_test_result"),
+    out=schema("infiltration_rate_due_to_structure"),
+)
 def calculate_infiltration_rate_due_to_structure(
     permeability_test_result: pd.Series,
     no_storeys: pd.Series,
