@@ -202,39 +202,63 @@ def calculate_infiltration_rate(
 
 
 def _calculate_natural_ventilation_air_rate_change(
-    infiltration_rate: pd.Series,
+    infiltration_rate: pd.Series, is_applicable: pd.Series
 ) -> pd.Series:
-    return infiltration_rate.where(
-        infiltration_rate > 1, 0.5 + (infiltration_rate ** 2) * 0.5
+    infiltration_rate.loc[is_applicable] = np.where(
+        infiltration_rate.loc[is_applicable] > 1,
+        0.5 + (infiltration_rate.loc[is_applicable] ** 2) * 0.5,
+        infiltration_rate.loc[is_applicable],
     )
+    infiltration_rate.loc[~is_applicable] = np.nan
+    return infiltration_rate
 
 
 def _calculate_loft_ventilation_air_rate_change(
-    infiltration_rate: pd.Series, building_volume: pd.Series
+    infiltration_rate: pd.Series, building_volume: pd.Series, is_applicable: pd.Series
 ) -> pd.Series:
-    return (
-        _calculate_natural_ventilation_air_rate_change(infiltration_rate)
-        + 20 / building_volume
+    natural_ventilation = _calculate_natural_ventilation_air_rate_change(
+        infiltration_rate, is_applicable
     )
+    infiltration_rate.loc[is_applicable] = (
+        natural_ventilation + 20 / building_volume.loc[is_applicable]
+    )
+    infiltration_rate.loc[~is_applicable] = np.nan
+    return infiltration_rate
 
 
 def _calculate_outside_ventilation_air_rate_change(
-    infiltration_rate: pd.Series,
+    infiltration_rate: pd.Series, is_applicable: pd.Series
 ) -> pd.Series:
-    return np.maximum([0.5] * len(infiltration_rate), infiltration_rate + 0.25)
+    infiltration_rate.loc[is_applicable] = np.maximum(
+        [0.5] * len(infiltration_rate.loc[is_applicable]),
+        infiltration_rate.loc[is_applicable] + 0.25,
+    )
+    infiltration_rate.loc[~is_applicable] = np.nan
+    return infiltration_rate
 
 
 def _calculate_mech_ventilation_air_rate_change(
-    infiltration_rate: pd.Series,
+    infiltration_rate: pd.Series, is_applicable: pd.Series
 ) -> pd.Series:
-    return infiltration_rate + 0.5
+    adjustment_factor = 0.5
+    infiltration_rate.loc[is_applicable] = (
+        infiltration_rate.loc[is_applicable] + adjustment_factor
+    )
+    infiltration_rate.loc[~is_applicable] = np.nan
+    return infiltration_rate
 
 
 def _calculate_heat_recovery_ventilation_air_rate_change(
     infiltration_rate: pd.Series,
     heat_exchanger_efficiency: pd.Series,
+    is_applicable: pd.Series,
 ) -> pd.Series:
-    return infiltration_rate + 0.5 * (1 - heat_exchanger_efficiency / 100)
+    adjustment_factor = 0.5 * (1 - heat_exchanger_efficiency.loc[is_applicable] / 100)
+    infiltration_rate.loc[is_applicable] = (
+        infiltration_rate.loc[is_applicable] + adjustment_factor
+    )
+    infiltration_rate.loc[~is_applicable] = np.nan
+    return infiltration_rate
 
 
 def calculate_effective_air_rate_change(
@@ -259,29 +283,27 @@ def calculate_effective_air_rate_change(
         )
 
     natural = _calculate_natural_ventilation_air_rate_change(
-        infiltration_rate[ventilation_method == "natural_ventilation"]
+        infiltration_rate, ventilation_method == "natural_ventilation"
     )
     loft = _calculate_loft_ventilation_air_rate_change(
-        infiltration_rate[ventilation_method == "positive_input_ventilation_from_loft"],
-        building_volume[ventilation_method == "positive_input_ventilation_from_loft"],
+        infiltration_rate,
+        building_volume,
+        ventilation_method == "positive_input_ventilation_from_loft",
     )
     outside = _calculate_outside_ventilation_air_rate_change(
-        infiltration_rate[
-            ventilation_method == "positive_input_ventilation_from_outside"
-        ]
+        infiltration_rate,
+        ventilation_method == "positive_input_ventilation_from_outside",
     )
     mechanical = _calculate_mech_ventilation_air_rate_change(
-        infiltration_rate[
-            ventilation_method == "mechanical_ventilation_no_heat_recovery"
-        ]
+        infiltration_rate,
+        ventilation_method == "mechanical_ventilation_no_heat_recovery",
     )
     heat_recovery = _calculate_heat_recovery_ventilation_air_rate_change(
-        infiltration_rate[ventilation_method == "mechanical_ventilation_heat_recovery"],
-        heat_exchanger_efficiency[
-            ventilation_method == "mechanical_ventilation_heat_recovery"
-        ],
+        infiltration_rate,
+        heat_exchanger_efficiency,
+        ventilation_method == "mechanical_ventilation_heat_recovery",
     )
-    return pd.concat([natural, loft, outside, mechanical, heat_recovery]).sort_index()
+    return natural.fillna(loft).fillna(outside).fillna(mechanical).fillna(heat_recovery)
 
 
 def calculate_ventilation_heat_loss_coefficient(
