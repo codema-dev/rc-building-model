@@ -9,6 +9,13 @@ import pytest
 from rcbm import vent
 
 
+def test_calculate_infiltration_rate_due_to_opening_on_invalid_inputs():
+    with pytest.raises(SchemaError):
+        vent.calculate_infiltration_rate_due_to_opening(
+            pd.Series([1]), pd.Series([0]), 10
+        )
+
+
 @hypothesis.given(
     no_openings=vent.schema("no_openings").strategy(size=5),
     building_volume=vent.schema("building_volume").strategy(size=5),
@@ -42,12 +49,12 @@ def test_calculate_infiltration_rate_due_to_height_on_valid_inputs(
     assert not result.isna().any()
 
 
-def test_calculate_infiltration_rate_due_to_structure_type_raises_error_on_invalid_input():
+def test_calculate_infiltration_rate_due_to_structure_type_on_invalid_inputs():
     with pytest.raises(SchemaError):
         vent.calculate_infiltration_rate_due_to_structure_type(pd.Series(["brick"]))
 
 
-def test_calculate_infiltration_rate_due_to_suspended_floor_raises_error_on_invalid_input():
+def test_calculate_infiltration_rate_due_to_suspended_floor_on_invalid_inputs():
     with pytest.raises(ValueError):
         vent.calculate_infiltration_rate_due_to_suspended_floor(
             pd.Series(["none", None])

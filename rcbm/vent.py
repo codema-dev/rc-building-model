@@ -20,12 +20,7 @@ def schema(name: str) -> pa.SeriesSchema:
         ),
         "building_volume": pa.SeriesSchema(
             int,
-            checks=pa.Check(
-                lambda s: not (s == 0).any(),
-                name="Has zero values!",
-                error="Please remove buildings with zero volume, otherwise they will"
-                " have an infinite infiltration rate!",
-            ),
+            checks=pa.Check.not_equal_to(0),
             nullable=False,
         ),
         "infiltration_rate_due_to_opening": pa.SeriesSchema(
