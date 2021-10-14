@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rcbm"
-version = "0.2.2"
+version = "0.2.3"
 description = "A Resistance Capacitance (RC) Model for the Simulation of Building Stock Energy Usage"
 authors = ["Rowan Molony <rowan.molony@codema.ie>"]
 license = "MIT"
