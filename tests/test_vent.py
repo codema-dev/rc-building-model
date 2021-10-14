@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
 import pandera as pa
+from pandera.errors import SchemaError
 import pytest
 
 from rcbm import vent
@@ -42,10 +43,8 @@ def test_calculate_infiltration_rate_due_to_height_on_valid_inputs(
 
 
 def test_calculate_infiltration_rate_due_to_structure_type_raises_error_on_invalid_input():
-    with pytest.raises(ValueError):
-        vent.calculate_infiltration_rate_due_to_structure_type(
-            pd.Series(["unknown", None])
-        )
+    with pytest.raises(SchemaError):
+        vent.calculate_infiltration_rate_due_to_structure_type(pd.Series(["brick"]))
 
 
 def test_calculate_infiltration_rate_due_to_suspended_floor_raises_error_on_invalid_input():

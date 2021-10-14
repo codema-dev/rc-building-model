@@ -4,6 +4,13 @@ from pandas.core.dtypes.common import is_bool_dtype
 import pandera as pa
 from pandera.typing import Series
 
+STRUCTURE_TYPES = [
+    "unknown",
+    "masonry",
+    "timber_or_steel",
+    "concrete",
+]
+
 
 def schema(name: str) -> pa.SeriesSchema:
     _schemas = {
@@ -38,6 +45,15 @@ def schema(name: str) -> pa.SeriesSchema:
             nullable=False,
         ),
         "infiltration_rate_due_to_height": pa.SeriesSchema(
+            float,
+            nullable=False,
+        ),
+        "structure_type": pa.SeriesSchema(
+            object,
+            checks=pa.Check.isin(STRUCTURE_TYPES),
+            nullable=False,
+        ),
+        "infiltration_rate_due_to_structure_type": pa.SeriesSchema(
             float,
             nullable=False,
         ),
@@ -125,22 +141,13 @@ def calculate_infiltration_rate_due_to_height(no_storeys: Series) -> Series:
     return (no_storeys - 1) * 0.1
 
 
+@pa.check_io(
+    structure_type=schema("structure_type"),
+    out=schema("infiltration_rate_due_to_structure_type"),
+)
 def calculate_infiltration_rate_due_to_structure_type(
     structure_type: pd.Series, unknown_structure_infiltration_rate: float = 0.35
 ) -> pd.Series:
-    acceptable_structure_types = [
-        "unknown",
-        "masonry",
-        "timber_or_steel",
-        "concrete",
-    ]
-    if not np.in1d(structure_type.unique(), acceptable_structure_types).all():
-        raise ValueError(
-            f"Only {acceptable_structure_types} structure types are supported!"
-            " Please rename your structure types to match these, or if it is"
-            " is another type entirely either fork this repository or submit a"
-            " pull request to implement it!"
-        )
     infiltration_rate_map = {
         "unknown": unknown_structure_infiltration_rate,
         "masonry": 0.35,
