@@ -11,6 +11,8 @@ STRUCTURE_TYPES = [
     "concrete",
 ]
 
+FLOOR_TYPES = ["none", "sealed", "unsealed"]
+
 
 def schema(name: str) -> pa.SeriesSchema:
     _schemas = {
@@ -44,11 +46,20 @@ def schema(name: str) -> pa.SeriesSchema:
             nullable=False,
         ),
         "structure_type": pa.SeriesSchema(
-            object,
+            str,
             checks=pa.Check.isin(STRUCTURE_TYPES),
             nullable=False,
         ),
         "infiltration_rate_due_to_structure_type": pa.SeriesSchema(
+            float,
+            nullable=False,
+        ),
+        "is_floor_suspended": pa.SeriesSchema(
+            str,
+            checks=pa.Check.isin(FLOOR_TYPES),
+            nullable=False,
+        ),
+        "infiltration_rate_due_to_suspended_floor": pa.SeriesSchema(
             float,
             nullable=False,
         ),
@@ -152,17 +163,13 @@ def calculate_infiltration_rate_due_to_structure_type(
     return structure_type.map(infiltration_rate_map)
 
 
+@pa.check_io(
+    is_floor_suspended=schema("is_floor_suspended"),
+    out=schema("infiltration_rate_due_to_suspended_floor"),
+)
 def calculate_infiltration_rate_due_to_suspended_floor(
     is_floor_suspended: pd.Series,
 ) -> pd.Series:
-    acceptable_suspended_floor_types = ["none", "sealed", "unsealed"]
-    if not np.in1d(is_floor_suspended.unique(), acceptable_suspended_floor_types).all():
-        raise ValueError(
-            f"Only {acceptable_suspended_floor_types} floor types are supported!"
-            " Please rename your floor types to match these, or if it is"
-            " is another type entirely either fork this repository or submit a"
-            " pull request to implement it!"
-        )
     infiltration_rate_map = {"none": 0, "sealed": 0.1, "unsealed": 0.2}
     return is_floor_suspended.map(infiltration_rate_map)
 

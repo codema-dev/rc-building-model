@@ -55,10 +55,8 @@ def test_calculate_infiltration_rate_due_to_structure_type_on_invalid_inputs():
 
 
 def test_calculate_infiltration_rate_due_to_suspended_floor_on_invalid_inputs():
-    with pytest.raises(ValueError):
-        vent.calculate_infiltration_rate_due_to_suspended_floor(
-            pd.Series(["none", None])
-        )
+    with pytest.raises(SchemaError):
+        vent.calculate_infiltration_rate_due_to_suspended_floor(pd.Series([None]))
 
 
 def test_calculate_infiltration_rate_due_to_openings():
