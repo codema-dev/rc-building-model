@@ -1,23 +1,86 @@
+import hypothesis
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
+import pandera as pa
+from pandera.errors import SchemaError
 import pytest
 
 from rcbm import vent
 
 
-def test_calculate_infiltration_rate_due_to_structure_type_raises_error_on_invalid_input():
-    with pytest.raises(ValueError):
-        vent.calculate_infiltration_rate_due_to_structure_type(
-            pd.Series(["unknown", None])
+def test_calculate_infiltration_rate_due_to_opening_on_invalid_inputs():
+    with pytest.raises(SchemaError):
+        vent.calculate_infiltration_rate_due_to_opening(
+            pd.Series([1]), pd.Series([0]), 10
         )
 
 
-def test_calculate_infiltration_rate_due_to_suspended_floor_raises_error_on_invalid_input():
-    with pytest.raises(ValueError):
-        vent.calculate_infiltration_rate_due_to_suspended_floor(
-            pd.Series(["none", None])
-        )
+@hypothesis.given(
+    no_openings=vent.schema("no_openings").strategy(size=5),
+    building_volume=vent.schema("building_volume").strategy(size=5),
+)
+def test_calculate_infiltration_rate_due_to_opening_on_valid_inputs(
+    no_openings, building_volume
+):
+    result = vent.calculate_infiltration_rate_due_to_opening(
+        no_openings, building_volume, 10
+    )
+    assert not result.isna().any()
+
+
+@hypothesis.given(
+    is_draught_lobby=vent.schema("is_draught_lobby").strategy(size=5),
+)
+def test_calculate_infiltration_rate_due_to_draught_lobby_on_valid_inputs(
+    is_draught_lobby,
+):
+    result = vent.calculate_infiltration_rate_due_to_draught_lobby(is_draught_lobby)
+    assert not result.isna().any()
+
+
+@hypothesis.given(
+    no_storeys=vent.schema("no_storeys").strategy(size=5),
+)
+def test_calculate_infiltration_rate_due_to_height_on_valid_inputs(
+    no_storeys,
+):
+    result = vent.calculate_infiltration_rate_due_to_height(no_storeys)
+    assert not result.isna().any()
+
+
+def test_calculate_infiltration_rate_due_to_structure_type_on_invalid_inputs():
+    with pytest.raises(SchemaError):
+        vent.calculate_infiltration_rate_due_to_structure_type(pd.Series(["brick"]))
+
+
+def test_calculate_infiltration_rate_due_to_suspended_floor_on_invalid_inputs():
+    with pytest.raises(SchemaError):
+        vent.calculate_infiltration_rate_due_to_suspended_floor(pd.Series([None]))
+
+
+@hypothesis.given(
+    percentage_draught_stripped=vent.schema("percentage_draught_stripped").strategy(
+        size=5
+    ),
+)
+def test_calculate_infiltration_rate_due_to_draught_on_valid_inputs(
+    percentage_draught_stripped,
+):
+    result = vent.calculate_infiltration_rate_due_to_draught(
+        percentage_draught_stripped
+    )
+    assert not result.isna().any()
+
+
+@hypothesis.given(
+    no_sides_sheltered=vent.schema("no_sides_sheltered").strategy(size=5),
+)
+def test_calculate_infiltration_rate_adjustment_factor_on_valid_inputs(
+    no_sides_sheltered,
+):
+    result = vent.calculate_infiltration_rate_adjustment_factor(no_sides_sheltered)
+    assert not result.isna().any()
 
 
 def test_calculate_infiltration_rate_due_to_openings():
@@ -42,20 +105,21 @@ def test_calculate_infiltration_rate_due_to_openings():
     assert_series_equal(output.round(2), expected_output)
 
 
-def test_calculate_air_rate_change_raises_error_on_invalid_input():
-    with pytest.raises(ValueError):
-        vent.calculate_effective_air_rate_change(
-            pd.Series(["natural_ventilation", None]), None, None, None
-        )
-
-
 def test_calculate_infiltration_rate_due_to_structure():
     """Output is equivalent to DEAP 4.2.0 example A"""
-    permeability_test_result = pd.Series([0.15, np.nan, np.nan])
-    no_storeys = pd.Series([np.nan, 2, 1])
-    percentage_draught_stripped = pd.Series([np.nan, 100, 75])
-    is_floor_suspended = pd.Series(["none", "none", "unsealed"])
-    structure_type = pd.Series(["unknown", "masonry", "timber_or_steel"])
+    permeability_test_result = pd.Series(
+        [0.15, np.nan, np.nan], name="permeability_test_result"
+    )
+    no_storeys = pd.Series([2, 2, 1], name="no_storeys")
+    percentage_draught_stripped = pd.Series(
+        [50, 100, 75], name="percentage_draught_stripped"
+    )
+    is_floor_suspended = pd.Series(
+        ["none", "none", "unsealed"], name="is_floor_suspended"
+    )
+    structure_type = pd.Series(
+        ["unknown", "masonry", "timber_or_steel"], name="structure_type"
+    )
     expected_output = pd.Series([0.15, 0.5, 0.55])
 
     output = vent.calculate_infiltration_rate_due_to_structure(
@@ -122,9 +186,11 @@ def test_calculate_effective_air_rate_change():
             "mechanical_ventilation_heat_recovery",
         ]
     )
-    building_volume = pd.Series([321] * n_methods)
-    infiltration_rate = pd.Series([0.2] * n_methods)
-    heat_exchanger_efficiency = pd.Series([0] * n_methods)
+    building_volume = pd.Series([321] * n_methods, name="building_volume")
+    infiltration_rate = pd.Series([0.2] * n_methods, name="infiltration_rate")
+    heat_exchanger_efficiency = pd.Series(
+        [0] * n_methods, name="heat_exchanger_efficiency"
+    )
     expected_output = pd.Series([0.52, 0.58, 0.5, 0.5, 0.7, 0.7])
 
     output = vent.calculate_effective_air_rate_change(
