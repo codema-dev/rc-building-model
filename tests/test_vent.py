@@ -12,12 +12,22 @@ from rcbm import vent
     no_openings=vent.schema("no_openings").strategy(size=5),
     building_volume=vent.schema("building_volume").strategy(size=5),
 )
-def test_calculate_infiltration_rate_due_to_opening_on_invalid_inputs(
+def test_calculate_infiltration_rate_due_to_opening_on_valid_inputs(
     no_openings, building_volume
 ):
     result = vent.calculate_infiltration_rate_due_to_opening(
         no_openings, building_volume, 10
     )
+    assert not result.isna().any()
+
+
+@hypothesis.given(
+    is_draught_lobby=vent.schema("is_draught_lobby").strategy(size=5),
+)
+def test_calculate_infiltration_rate_due_to_draught_lobby_on_valid_inputs(
+    is_draught_lobby,
+):
+    result = vent.calculate_infiltration_rate_due_to_draught_lobby(is_draught_lobby)
     assert not result.isna().any()
 
 

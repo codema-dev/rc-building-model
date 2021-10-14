@@ -25,6 +25,14 @@ def schema(name: str) -> pa.SeriesSchema:
             float,
             nullable=False,
         ),
+        "is_draught_lobby": pa.SeriesSchema(
+            bool,
+            nullable=False,
+        ),
+        "infiltration_rate_due_to_draught_lobby": pa.SeriesSchema(
+            float,
+            nullable=False,
+        ),
     }
     return _schemas[name]
 
@@ -72,14 +80,13 @@ def calculate_infiltration_rate_due_to_room_heaters(
     )
 
 
+@pa.check_io(
+    is_draught_lobby=schema("is_draught_lobby"),
+    out=schema("infiltration_rate_due_to_draught_lobby"),
+)
 def calculate_infiltration_rate_due_to_draught_lobby(
     is_draught_lobby: Series,
 ) -> Series:
-    if not is_bool_dtype(is_draught_lobby):
-        raise ValueError(
-            f"is_draught_lobby must be a boolean series (i.e. either True or False)!"
-            " Please convert it to boolean!"
-        )
     return is_draught_lobby.map({True: 0, False: 0.05})
 
 
