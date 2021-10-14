@@ -33,6 +33,14 @@ def schema(name: str) -> pa.SeriesSchema:
             float,
             nullable=False,
         ),
+        "no_storeys": pa.SeriesSchema(
+            int,
+            nullable=False,
+        ),
+        "infiltration_rate_due_to_height": pa.SeriesSchema(
+            float,
+            nullable=False,
+        ),
     }
     return _schemas[name]
 
@@ -91,13 +99,13 @@ def calculate_infiltration_rate_due_to_draught_lobby(
 
 
 def calculate_infiltration_rate_due_to_openings(
-    building_volume: pd.Series,
-    no_chimneys: pd.Series,
-    no_open_flues: pd.Series,
-    no_fans: pd.Series,
-    no_room_heaters: pd.Series,
-    is_draught_lobby: pd.Series,
-) -> pd.Series:
+    building_volume: Series,
+    no_chimneys: Series,
+    no_open_flues: Series,
+    no_fans: Series,
+    no_room_heaters: Series,
+    is_draught_lobby: Series,
+) -> Series:
     return (
         calculate_infiltration_rate_due_to_chimneys(no_chimneys, building_volume)
         + calculate_infiltration_rate_due_to_open_flues(no_open_flues, building_volume)
@@ -109,7 +117,11 @@ def calculate_infiltration_rate_due_to_openings(
     )
 
 
-def calculate_infiltration_rate_due_to_height(no_storeys: pd.Series) -> pd.Series:
+@pa.check_io(
+    no_storeys=schema("no_storeys"),
+    out=schema("infiltration_rate_due_to_height"),
+)
+def calculate_infiltration_rate_due_to_height(no_storeys: Series) -> Series:
     return (no_storeys - 1) * 0.1
 
 
