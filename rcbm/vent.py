@@ -11,6 +11,7 @@ from decimal import DivisionByZero
 
 import numpy as np
 import pandas as pd
+from pandas.core.dtypes.common import is_bool_dtype
 
 
 def _calculate_infiltration_rate_due_to_opening(
@@ -60,8 +61,12 @@ def calculate_infiltration_rate_due_to_room_heaters(
 def calculate_infiltration_rate_due_to_draught_lobby(
     is_draught_lobby: pd.Series,
 ) -> pd.Series:
-    yes_or_no_map = {"YES": True, "NO": False}
-    return is_draught_lobby.map(yes_or_no_map).map({True: 0, False: 0.05})
+    if not is_bool_dtype(is_draught_lobby):
+        raise ValueError(
+            f"is_draught_lobby must be a boolean series (i.e. either True or False)!"
+            " Please convert it to boolean!"
+        )
+    return is_draught_lobby.map({True: 0, False: 0.05})
 
 
 def calculate_infiltration_rate_due_to_openings(

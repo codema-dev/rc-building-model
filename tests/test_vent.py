@@ -27,7 +27,7 @@ def test_calculate_infiltration_rate_due_to_openings():
     no_open_flues = pd.Series([0, 0, 1])
     no_fans = pd.Series([1, 0, 1])
     no_room_heaters = pd.Series([0, 0, 1])
-    is_draught_lobby = pd.Series(["NO", "YES", "NO"])
+    is_draught_lobby = pd.Series([False, True, False])
     expected_output = pd.Series([0.08, 0, 0.6])
 
     output = vent.calculate_infiltration_rate_due_to_openings(
