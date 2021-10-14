@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from pandas.core.dtypes.common import is_bool_dtype
+from pandas.api.types import is_numeric_dtype
 import pandera as pa
 from pandera.typing import Series
 
@@ -22,19 +22,21 @@ VENTILATION_METHODS = [
 ]
 
 
+is_number = pa.Check(is_numeric_dtype, name="is_number")
+
+
 def schema(name: str) -> pa.SeriesSchema:
     _schemas = {
         "no_openings": pa.SeriesSchema(
-            int,
+            checks=is_number,
             nullable=False,
         ),
         "building_volume": pa.SeriesSchema(
-            (int, float),
-            checks=pa.Check.not_equal_to(0),
+            checks=[is_number, pa.Check.not_equal_to(0)],
             nullable=False,
         ),
         "infiltration_rate_due_to_opening": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
         "is_draught_lobby": pa.SeriesSchema(
@@ -42,15 +44,15 @@ def schema(name: str) -> pa.SeriesSchema:
             nullable=False,
         ),
         "infiltration_rate_due_to_draught_lobby": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
         "no_storeys": pa.SeriesSchema(
-            int,
+            checks=is_number,
             nullable=False,
         ),
         "infiltration_rate_due_to_height": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
         "structure_type": pa.SeriesSchema(
@@ -59,7 +61,7 @@ def schema(name: str) -> pa.SeriesSchema:
             nullable=False,
         ),
         "infiltration_rate_due_to_structure_type": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
         "is_floor_suspended": pa.SeriesSchema(
@@ -68,27 +70,27 @@ def schema(name: str) -> pa.SeriesSchema:
             nullable=False,
         ),
         "infiltration_rate_due_to_suspended_floor": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
         "percentage_draught_stripped": pa.SeriesSchema(
-            (int, float),
+            checks=is_number,
             nullable=False,
         ),
         "infiltration_rate_due_to_draught": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
         "permeability_test_result": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=True,
         ),
         "infiltration_rate_due_to_structure": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
         "no_sides_sheltered": pa.SeriesSchema(
-            int,
+            checks=is_number,
             nullable=False,
         ),
         "ventilation_method": pa.SeriesSchema(
@@ -97,15 +99,15 @@ def schema(name: str) -> pa.SeriesSchema:
             nullable=False,
         ),
         "infiltration_rate": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
         "heat_exchanger_efficiency": pa.SeriesSchema(
-            (int, float),
+            checks=is_number,
             nullable=True,
         ),
         "effective_air_rate_change": pa.SeriesSchema(
-            float,
+            checks=is_number,
             nullable=False,
         ),
     }

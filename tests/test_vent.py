@@ -1,8 +1,6 @@
-import hypothesis
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
-import pandera as pa
 from pandera.errors import SchemaError
 import pytest
 
@@ -16,39 +14,6 @@ def test_calculate_infiltration_rate_due_to_opening_on_invalid_inputs():
         )
 
 
-@hypothesis.given(
-    no_openings=vent.schema("no_openings").strategy(size=5),
-    building_volume=vent.schema("building_volume").strategy(size=5),
-)
-def test_calculate_infiltration_rate_due_to_opening_on_valid_inputs(
-    no_openings, building_volume
-):
-    result = vent.calculate_infiltration_rate_due_to_opening(
-        no_openings, building_volume, 10
-    )
-    assert not result.isna().any()
-
-
-@hypothesis.given(
-    is_draught_lobby=vent.schema("is_draught_lobby").strategy(size=5),
-)
-def test_calculate_infiltration_rate_due_to_draught_lobby_on_valid_inputs(
-    is_draught_lobby,
-):
-    result = vent.calculate_infiltration_rate_due_to_draught_lobby(is_draught_lobby)
-    assert not result.isna().any()
-
-
-@hypothesis.given(
-    no_storeys=vent.schema("no_storeys").strategy(size=5),
-)
-def test_calculate_infiltration_rate_due_to_height_on_valid_inputs(
-    no_storeys,
-):
-    result = vent.calculate_infiltration_rate_due_to_height(no_storeys)
-    assert not result.isna().any()
-
-
 def test_calculate_infiltration_rate_due_to_structure_type_on_invalid_inputs():
     with pytest.raises(SchemaError):
         vent.calculate_infiltration_rate_due_to_structure_type(pd.Series(["brick"]))
@@ -57,30 +22,6 @@ def test_calculate_infiltration_rate_due_to_structure_type_on_invalid_inputs():
 def test_calculate_infiltration_rate_due_to_suspended_floor_on_invalid_inputs():
     with pytest.raises(SchemaError):
         vent.calculate_infiltration_rate_due_to_suspended_floor(pd.Series([None]))
-
-
-@hypothesis.given(
-    percentage_draught_stripped=vent.schema("percentage_draught_stripped").strategy(
-        size=5
-    ),
-)
-def test_calculate_infiltration_rate_due_to_draught_on_valid_inputs(
-    percentage_draught_stripped,
-):
-    result = vent.calculate_infiltration_rate_due_to_draught(
-        percentage_draught_stripped
-    )
-    assert not result.isna().any()
-
-
-@hypothesis.given(
-    no_sides_sheltered=vent.schema("no_sides_sheltered").strategy(size=5),
-)
-def test_calculate_infiltration_rate_adjustment_factor_on_valid_inputs(
-    no_sides_sheltered,
-):
-    result = vent.calculate_infiltration_rate_adjustment_factor(no_sides_sheltered)
-    assert not result.isna().any()
 
 
 def test_calculate_infiltration_rate_due_to_openings():
