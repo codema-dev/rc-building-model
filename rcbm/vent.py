@@ -29,7 +29,7 @@ def schema(name: str) -> pa.SeriesSchema:
             nullable=False,
         ),
         "building_volume": pa.SeriesSchema(
-            int,
+            (int, float),
             checks=pa.Check.not_equal_to(0),
             nullable=False,
         ),
