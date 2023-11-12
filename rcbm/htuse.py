@@ -62,7 +62,11 @@ def _calculate_heat_loss_per_year_on_monthly_averages(
                 6.0,
             ]
         )
-    delta_t = internal_temperatures - external_temperatures
+    
+    if internal_temperatures is not None and external_temperatures is not None:
+        delta_t = internal_temperatures - external_temperatures
+    else:
+        delta_t = None
 
     heat_loss_kwh = _calculate_heat_loss_kwh(
         heat_loss_coefficient=heat_loss_coefficient,
@@ -70,6 +74,7 @@ def _calculate_heat_loss_per_year_on_monthly_averages(
         hours=heating_hours,
     )
     return heat_loss_kwh.sum(level=0).round()
+
 
 
 def calculate_heat_loss_per_year(
